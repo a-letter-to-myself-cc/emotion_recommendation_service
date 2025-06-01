@@ -60,16 +60,12 @@ def split_recommendations(recommendations_text):
     return movie_lines, music_lines
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
-def recommendation_result_view(request, user_id):
-    print(f"recommendation_result_view called with user_id={user_id}")
-    from django.contrib.auth.models import User
+@permission_classes([IsAuthenticated])
+def recommendation_result_view(request):
+    user_info = request.user
+    user_id = user_info.get("user_id")  # JWT payload에서 넘어온 값
+
     from recommendation.utils import generate_recommendations
-    
-    user_obj = User.objects.get(id=user_id)
-    recommendations = generate_recommendations(mood="기쁨", user=user_obj)
-    
-    context = {
-        'recommendations': recommendations,
-    }
+    recommendations = generate_recommendations(mood="기쁨", user_id=user_id)
+
     return Response({"recommendations": recommendations})

@@ -100,10 +100,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # DRF 설정
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'recommendation.authentication.RemoteJWTAuthentication',
+    ],
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.IsAuthenticated',
     ]
 }
+
 
 # OpenAI 키
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")

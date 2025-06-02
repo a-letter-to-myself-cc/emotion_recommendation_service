@@ -101,7 +101,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # DRF 설정
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'recommendation.authentication.RemoteJWTAuthentication',
+        'emotion_recommendation.recommendation.authentication.RemoteJWTAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',

@@ -11,6 +11,9 @@ from django.contrib.auth.models import User
 from rest_framework.permissions import AllowAny
 from ..utils import log_recommendation, generate_recommendations
 
+# ✅ 정확한 전체 경로로 바꿔야 합니다
+from emotion_recommendation.recommendation.auth_service import verify_access_token
+
 from django.views.decorators.csrf import csrf_exempt
 
 
@@ -26,17 +29,29 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 import os
 # openai.api_key = os.getenv("OPENAI_API_KEY")
 
-@csrf_exempt
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
 def recommend_movies_and_music(request):
+    # 1. 인증 처리
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response({"detail": "Authorization header missing"}, status=401)
+    
+    token = auth_header.split("Bearer ")[1]
+    try:
+        user_id = verify_access_token(token)
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"detail": "사용자가 존재하지 않습니다."}, status=404)
+    except Exception as e:
+        return Response({"detail": str(e)}, status=401)
+
+    # 2. 추천 생성
     mood = request.data.get("most_frequent_mood")
-    user = request.user if request.user.is_authenticated else None
     lines = generate_recommendations(mood, user=user)
-    # 로그인된 사용자만 로그 기록 (로그인 안 됐으면 생략)
-    if user:
-        log_recommendation(user.id, mood, lines)
+    log_recommendation(user_id, mood, lines)
+
     return Response({"recommendations": "\n".join(lines)})
+
 
 
 def split_recommendations(recommendations_text):
@@ -62,10 +77,26 @@ def split_recommendations(recommendations_text):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def recommendation_result_view(request):
-    user_info = request.user
-    user_id = user_info.get("user_id")  # JWT payload에서 넘어온 값
+    # ✅ Authorization 헤더에서 토큰 추출
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return Response({"detail": "Authorization header missing or malformed"}, status=401)
 
-    from recommendation.utils import generate_recommendations
-    recommendations = generate_recommendations(mood="기쁨", user_id=user_id)
+    token = auth_header.split("Bearer ")[1]
+
+    # ✅ JWT 토큰 인증 → user_id 반환
+    try:
+        user_id = verify_access_token(token)
+    except Exception as e:
+        return Response({"detail": str(e)}, status=401)
+
+    # ✅ 실제 사용자 객체 가져오기
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"detail": "사용자가 존재하지 않습니다."}, status=404)
+
+    # ✅ 추천 생성
+    recommendations = generate_recommendations(mood="기쁨", user=user)
 
     return Response({"recommendations": recommendations})

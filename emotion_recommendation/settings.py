@@ -2,18 +2,16 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 환경 변수 로드
-load_dotenv()
-
-# BASE_DIR 설정
+# BASE_DIR 먼저 설정
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# 보안 키 (개발용 임시 키)
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dummy-secret-key-for-dev")
+# .env 파일 로드 (BASE_DIR 기준으로 위치 정확히 지정)
+load_dotenv(dotenv_path=BASE_DIR / '.env')
 
-# 디버그 모드
+
+# SECRET_KEY 등 환경변수로 불러오기
+SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = True
-
 ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
@@ -68,11 +66,11 @@ WSGI_APPLICATION = 'emotion_recommendation.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'emotion_store',
-        'USER': 'emotion_user',
-        'PASSWORD': '0718',
-        'HOST': '34.47.90.156',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
 
